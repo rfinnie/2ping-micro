@@ -199,6 +199,11 @@ class TwoPingMicro:
                 print('No reply requested')
             return
 
+        # But we don't want to reply to something which is in reply
+        # to something else (2nd leg of a 3-way ping)
+        if (opcode_flags & 0x0002):
+            return
+
         reply_message_id = self.urandom(6)
         if self.debug:
             print('Replying with message ID:', reply_message_id)
