@@ -120,12 +120,18 @@ class TwoPingMicro:
     led = False
     led_pin = 2
     led_swapped = True
+    battery = False
+    battery_adc = 0
+    battery_min = 0
+    # Assuming 220K/1220K voltage divider on a 4.2V battery =~ 758mV
+    battery_max = 758
     _mt = None
     _sock = None
     _reply_packet = bytearray(128)
     _led_pin_obj = None
     _led_off = None
     _led_on = None
+    _adc = None
 
     def __init__(self, config=None):
         if config is not None:
@@ -151,6 +157,20 @@ class TwoPingMicro:
                 self._led_off = self._led_pin_obj.off
                 self._led_on = self._led_pin_obj.on
             self._led_off()
+
+        if self.battery:
+            try:
+                import machine
+                self._adc = machine.ADC(self.battery_adc).read
+            except:
+                def _fakeadc():
+                    randint = struct.unpack('!H', self.urandom(2))[0]
+                    return (
+                        randint + self.battery_min
+                    ) % (
+                        self.battery_max - self.battery_min
+                    )
+                self._adc = _fakeadc
 
     def mturandom(self, b):
         out = bytearray(b)
@@ -221,13 +241,45 @@ class TwoPingMicro:
         self._reply_packet[12:14] = b'\x00\x06'
         self._reply_packet[14:20] = message_id
 
-        # Opcode 0x8000 (Extended) + ExtID 0x3250564e (Program version)
+        # Opcode 0x8000 (Extended)
+
+        # ExtID 0x3250564e (Program version)
         # Not strictly needed, but nice to advertise
         program_version_len = len(self.program_version)
-        self._reply_packet[20:22] = bytes([0x00, 4+2+program_version_len])
+        # [20:22] = opcode data length (filled in later)
         self._reply_packet[22:26] = b'\x32\x50\x56\x4e'
         self._reply_packet[26:28] = bytes([0x00, program_version_len])
         self._reply_packet[28:(28+program_version_len)] = self.program_version
+        ext_len = 4+2+program_version_len
+
+        # ExtID 0x88a1f7c7 (Battery levels)
+        if self.battery:
+            level = self._adc()
+            # Enforce bounds
+            if level < self.battery_min:
+                level = self.battery_min
+            if level > self.battery_max:
+                level = self.battery_max
+
+            # Convert reading to 0x0000 - 0xffff
+            level_16b = int(
+                (level - self.battery_min) / (self.battery_max - self.battery_min) * 0xffff
+            )
+
+            # 0x88a1f7c7
+            self._reply_packet[(22+ext_len):(22+ext_len+4)] = b'\x88\xa1\xf7\xc7'
+            # Segment is 6 bytes
+            self._reply_packet[(22+ext_len+4):(22+ext_len+6)] = b'\x00\x06'
+            # 1 battery
+            self._reply_packet[(22+ext_len+6):(22+ext_len+8)] = b'\x00\x01'
+            # Battery ID 0
+            self._reply_packet[(22+ext_len+8):(22+ext_len+10)] = b'\x00\x00'
+            # Reading itself
+            struct.pack_into('!H', self._reply_packet, (22+ext_len+10), level_16b)
+            ext_len += 12
+
+        # Go back and insert the final opcode 0x8000 data length
+        struct.pack_into('!H', self._reply_packet, 20, ext_len)
 
         # Checksum is not strictly needed according to the protocol,
         # but easy to do

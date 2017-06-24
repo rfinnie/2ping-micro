@@ -13,6 +13,7 @@ Supported features:
 * Program version reply
 * IPv6 support (on supported MicroPython ports)
 * GPIO LED flashing on incoming packets
+* Battery measurement and reporting via ADC pin
 
 Missing features:
 
@@ -90,3 +91,11 @@ RECV: <Packet (0x53c332a4d5a2): [<In Reply To: 0xe20b5ba9de41>, <Extended: [<Ver
 rtt min/avg/ewma/max/mdev = 59.904/61.337/62.129/62.578/1.100 ms
 3 raw packets transmitted, 3 received
 ```
+
+## Battery support
+
+2ping-micro supports battery measurement via an ADC pin and reporting via the new draft (as of this writing) [2ping 0x88a1f7c7 battery level extended segment](https://github.com/rfinnie/2ping/blob/master/doc/2ping-protocol.md#0x88a1f7c7---battery-levels).
+This functionality is configurable, but assuming a 4.2V max battery is voltage divided via a 220K and 1M resistor and an ESP8266, it will work out of the box.
+[This guide from Adafruit](https://learn.adafruit.com/using-ifttt-with-adafruit-io/wiring#battery-tracking) explains how to set up the battery/ADC circuitry.
+
+On platforms without ADC support, if enabled it will simulate a battery, giving a random value each time.
