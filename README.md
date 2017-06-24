@@ -44,7 +44,7 @@ PORT = 9999
 import usocket as socket
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serversocket.bind(socket.getaddrinfo('0.0.0.0', PORT)[0][-1])
-serversocket.listen()
+serversocket.listen(1)
 (clientsocket, address) = serversocket.accept()
 f = open(FILE, 'w')
 while True:
