@@ -123,7 +123,7 @@ class TwoPingMicro:
     battery = False
     battery_adc = 0
     battery_min = 0
-    # Assuming 220K/1220K voltage divider on a 4.2V battery =~ 758mV
+    # Assuming 1M(R1)/220K(R2) voltage divider on a 4.2V battery =~ 758mV
     battery_max = 758
     _mt = None
     _sock = None

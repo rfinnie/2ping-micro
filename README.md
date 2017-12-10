@@ -95,7 +95,7 @@ rtt min/avg/ewma/max/mdev = 59.904/61.337/62.129/62.578/1.100 ms
 ## Battery support
 
 2ping-micro supports battery measurement via an ADC pin and reporting via the new draft (as of this writing) [2ping 0x88a1f7c7 battery level extended segment](https://github.com/rfinnie/2ping/blob/master/doc/2ping-protocol.md#0x88a1f7c7---battery-levels).
-This functionality is configurable, but assuming a 4.2V max battery is voltage divided via a 220K and 1M resistor and an ESP8266, it will work out of the box.
+This functionality is configurable, but assuming a 4.2V max battery is voltage divided via a 1M(R1) and 220K(R2) resistor and an ESP8266, it will work out of the box.
 [This guide from Adafruit](https://learn.adafruit.com/using-ifttt-with-adafruit-io/wiring#battery-tracking) explains how to set up the battery/ADC circuitry.
 
 On platforms without ADC support, if enabled it will simulate a battery, giving a random value each time.
